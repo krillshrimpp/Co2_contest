@@ -81,7 +81,7 @@ class PublicHandler(Handler):
             raise
 
 
-def make_server(port, origin, roads_path=ROOT / 'roads_test.json'):
+def make_server(port, origin, roads_path=ROOT / 'roads_test.json', host='127.0.0.1'):
     parsed = urlparse(origin)
     if parsed.scheme != "https" or not parsed.hostname or parsed.path not in ("", "/") or parsed.query or parsed.fragment or parsed.username:
         raise ValueError("공개 주소는 HTTPS origin이어야 합니다.")
@@ -101,7 +101,7 @@ def make_server(port, origin, roads_path=ROOT / 'roads_test.json'):
         scenario['schools'] = matrix['schools']
         validate_scenario(scenario)
         validate_matrix(scenario, matrix)
-    server = ThreadingHTTPServer(("127.0.0.1", port), PublicHandler)
+    server = ThreadingHTTPServer((host, port), PublicHandler)
     server.default_matrix = matrix
     server.default_scenario = scenario
     server.public_origin = origin.rstrip("/")
@@ -113,10 +113,11 @@ def make_server(port, origin, roads_path=ROOT / 'roads_test.json'):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8767)
     parser.add_argument("--origin", required=True)
     args = parser.parse_args()
-    server = make_server(args.port, args.origin)
+    server = make_server(args.port, args.origin, host=args.host)
     print(f"Public demo origin: {server.public_origin}", flush=True)
     try:
         server.serve_forever()
