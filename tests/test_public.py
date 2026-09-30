@@ -63,6 +63,16 @@ class PublicTests(unittest.TestCase):
         self.assertEqual(error.exception.code, 404)
         self.assertEqual(self.request(self.a, export['url']), result['result'])
 
+    def test_public_map_key_does_not_enable_routing(self):
+        self.server.map_js_key = 'public-javascript-test-key'
+        boot = self.request(self.a, '/api/bootstrap')
+        self.assertEqual(boot['js_key'], 'public-javascript-test-key')
+        self.assertFalse(boot['rest_key_set'])
+        with patch('app.build_matrix', side_effect=AssertionError('Kakao must not be called')):
+            with self.assertRaises(urllib.error.HTTPError) as error:
+                self.request(self.a, '/api/matrix', {'source': 'kakao', 'scenario': make_scenario(boot['config'])})
+            self.assertEqual(error.exception.code, 403)
+
     def test_reject_foreign_origin_host_and_private_files(self):
         for path, body, headers in [('/api/bootstrap', None, {'Host': 'evil.example'}),
                                     ('/api/generate', {}, {'Origin': 'https://evil.example'}),

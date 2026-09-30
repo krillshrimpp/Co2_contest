@@ -1,6 +1,7 @@
-"""Isolated, temporary public demo. Kakao requests and keys are unavailable."""
+"""Isolated public demo. Kakao routing requests and REST keys are unavailable."""
 import argparse
 import json
+import os
 import secrets
 import threading
 import time
@@ -8,7 +9,7 @@ from http.cookies import SimpleCookie, CookieError
 from http.server import ThreadingHTTPServer
 from urllib.parse import urlparse
 
-from app import Handler, start_job, ROOT
+from app import Handler, start_job, ROOT, load_keys
 from shuttle.data import defaults, make_scenario, validate_scenario
 from shuttle.planner import validate_matrix
 
@@ -49,7 +50,7 @@ class PublicHandler(Handler):
                     return False
                 token = secrets.token_urlsafe(32)
                 self.server.sessions[token] = {"seen": now, "state": {
-                    "matrix": self.server.default_matrix, "jobs": {}, "exports": {}, "rest_key": "", "js_key": ""}}
+                    "matrix": self.server.default_matrix, "jobs": {}, "exports": {}, "rest_key": "", "js_key": self.server.map_js_key}}
                 secure = "; Secure" if self.headers.get("Host") == urlparse(self.server.public_origin).netloc else ""
                 self.session_cookie = f"shuttle_session={token}; Path=/; HttpOnly; SameSite=Lax{secure}"
             session = self.server.sessions[token]
@@ -81,7 +82,7 @@ class PublicHandler(Handler):
             raise
 
 
-def make_server(port, origin, roads_path=ROOT / 'roads_test.json', host='127.0.0.1'):
+def make_server(port, origin, roads_path=ROOT / 'roads_test.json', host='127.0.0.1', js_key=''):
     parsed = urlparse(origin)
     if parsed.scheme != "https" or not parsed.hostname or parsed.path not in ("", "/") or parsed.query or parsed.fragment or parsed.username:
         raise ValueError("공개 주소는 HTTPS origin이어야 합니다.")
@@ -102,6 +103,7 @@ def make_server(port, origin, roads_path=ROOT / 'roads_test.json', host='127.0.0
         validate_scenario(scenario)
         validate_matrix(scenario, matrix)
     server = ThreadingHTTPServer((host, port), PublicHandler)
+    server.map_js_key = js_key.strip()
     server.default_matrix = matrix
     server.default_scenario = scenario
     server.public_origin = origin.rstrip("/")
@@ -117,7 +119,8 @@ if __name__ == "__main__":
     parser.add_argument("--port", type=int, default=8767)
     parser.add_argument("--origin", required=True)
     args = parser.parse_args()
-    server = make_server(args.port, args.origin, host=args.host)
+    js_key = os.environ.get("KAKAO_JS_KEY", "").strip() or load_keys()["js_key"]
+    server = make_server(args.port, args.origin, host=args.host, js_key=js_key)
     print(f"Public demo origin: {server.public_origin}", flush=True)
     try:
         server.serve_forever()
