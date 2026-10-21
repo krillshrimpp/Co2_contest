@@ -65,7 +65,7 @@ def load_schools():
                  "lat": float(r["위도"]), "lng": float(r["경도"]),
                  "address": r["소재지도로명주소"], "source_date": r["데이터기준일자"]}
                 for r in csv.DictReader(f)
-                if "부산" in r["시도교육청명"] and r["학교급구분"] == "고등학교"
+                if r["시도교육청명"] == "광주광역시교육청" and r["학교급구분"] == "고등학교"
                 and r["운영상태"] == "운영"]
 
 

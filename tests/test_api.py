@@ -41,7 +41,7 @@ class ApiTests(unittest.TestCase):
 
     def test_full_http_flow(self):
         boot = self.request("/api/bootstrap")
-        self.assertEqual(len(boot["schools"]), 142)
+        self.assertEqual(len(boot["schools"]), 68)
         config = boot["config"]
         config["student_count"] = 30
         scenario = self.request("/api/generate", {"config": config})

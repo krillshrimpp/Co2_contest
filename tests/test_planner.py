@@ -25,9 +25,23 @@ def small_case():
 class PlanningTests(unittest.TestCase):
     def test_source_csv(self):
         schools = load_schools()
-        self.assertEqual(len(schools), 142)
-        self.assertEqual(len({s["id"] for s in schools}), 142)
-        self.assertTrue(all(34 < s["lat"] < 36 and 128 < s["lng"] < 130 for s in schools))
+        self.assertEqual(len(schools), 68)
+        self.assertEqual(len({s["id"] for s in schools}), 68)
+        self.assertTrue(all(34 < s["lat"] < 36 and 126 < s["lng"] < 128 for s in schools))
+
+    def test_public_default_uses_gwangju_roads(self):
+        from public_server import make_server
+        server = make_server(0, 'https://demo.example.com')
+        try:
+            self.assertEqual(server.default_matrix['source'], 'kakao')
+            self.assertEqual(len(server.default_matrix['pairs']), 22 * 22)
+            self.assertTrue(all(edge['path'] for edge in server.default_matrix['pairs'].values()))
+            self.assertEqual(len(server.default_scenario['schools']), 22)
+            self.assertEqual(sum(g['students'] for g in server.default_scenario['cohorts']), 1000)
+            ids = {s['id'] for s in load_schools()}
+            self.assertTrue(all(s['id'] in ids for s in server.default_matrix['schools']))
+        finally:
+            server.server_close()
 
     def test_generation_is_repeatable_and_preserves_population(self):
         c = defaults()

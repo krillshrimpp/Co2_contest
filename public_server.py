@@ -82,7 +82,7 @@ class PublicHandler(Handler):
             raise
 
 
-def make_server(port, origin, roads_path=ROOT / 'roads_test.json', host='127.0.0.1', js_key=''):
+def make_server(port, origin, roads_path=ROOT / 'roads_gwangju.json', host='127.0.0.1', js_key=''):
     parsed = urlparse(origin)
     if parsed.scheme != "https" or not parsed.hostname or parsed.path not in ("", "/") or parsed.query or parsed.fragment or parsed.username:
         raise ValueError("공개 주소는 HTTPS origin이어야 합니다.")
@@ -90,7 +90,7 @@ def make_server(port, origin, roads_path=ROOT / 'roads_test.json', host='127.0.0
     if roads_path is not None:
         bundle = json.loads(roads_path.read_text(encoding='utf-8-sig'))
         if bundle.get('format') != 'shuttle-roads' or bundle.get('version') != 1:
-            raise ValueError('roads_test.json 도로 파일 형식이 올바르지 않습니다.')
+            raise ValueError('기본 도로 파일 형식이 올바르지 않습니다.')
         matrix = bundle['matrix']
         if matrix.get('source') not in ('kakao', 'estimated'):
             raise ValueError('기본 도로 데이터 출처가 올바르지 않습니다.')

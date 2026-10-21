@@ -18,7 +18,7 @@ async function api(path, body) {
 }
 function report(error) { $('alert').textContent = error.message || error; $('alert').hidden = false; }
 function clearError() { $('alert').hidden = true; }
-function saveSession() { if(scenario)sessionStorage.setItem('ieo-scenario',JSON.stringify(scenario)); }
+function saveSession() { if(scenario)sessionStorage.setItem('shuttle-scenario-gwangju-v1',JSON.stringify(scenario)); }
 function edited() { dirty = true; $('stale').hidden = !results; syncCount(); saveSession(); }
 function syncCount() {
   if (!scenario) return;
@@ -272,7 +272,7 @@ function drawMap() {
     lines+=`<polyline points="${path}" fill="none" stroke="${leg.load?'#16765c':'#bc854f'}" stroke-width="2.2" opacity=".6" ${leg.load?'':'stroke-dasharray="5 4"'}/>`;
   }
   const pins=scenario.schools.map((s,i)=>{const [x,y]=project(s.lat,s.lng);const depot=p?.depot===s.id;return `<g class="school-pin" data-pin="${s.id}" tabindex="0" role="button" aria-label="${esc(s.name)}" style="cursor:pointer"><title>${esc(s.name)}</title><circle cx="${x}" cy="${y}" r="${depot?9:5}" fill="${depot?'#d4b46e':'#338468'}" stroke="white" stroke-width="2"/><text x="${x+8}" y="${y+(i%2?12:-8)}" font-size="8" fill="#385e4b" paint-order="stroke" stroke="#f1f5ed" stroke-width="3">${esc(s.name)}</text></g>`;}).join('');
-  $('schematic').innerHTML=`<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="부산 학교 위치와 선택 차량의 개략 경로"><defs><pattern id="grid" width="35" height="35" patternUnits="userSpaceOnUse"><path d="M 35 0 L 0 0 0 35" fill="none" stroke="#dce4d5" stroke-width=".65"/></pattern></defs><rect width="100%" height="100%" fill="#edf2e7"/><rect width="100%" height="100%" fill="url(#grid)"/><text x="25" y="32" font-size="10" fill="#8da284" letter-spacing="3">부산 학교 위치</text><text x="710" y="30" font-size="13" fill="#75946d">N ↑</text>${lines}${pins}<text x="520" y="369" font-size="9" fill="#8b9b80">${matrix?.source==='kakao'?'카카오 도로':'학교 좌표'}</text></svg>`;
+  $('schematic').innerHTML=`<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="학교 위치와 선택 차량의 개략 경로"><defs><pattern id="grid" width="35" height="35" patternUnits="userSpaceOnUse"><path d="M 35 0 L 0 0 0 35" fill="none" stroke="#dce4d5" stroke-width=".65"/></pattern></defs><rect width="100%" height="100%" fill="#edf2e7"/><rect width="100%" height="100%" fill="url(#grid)"/><text x="25" y="32" font-size="10" fill="#8da284" letter-spacing="3">학교 위치</text><text x="710" y="30" font-size="13" fill="#75946d">N ↑</text>${lines}${pins}<text x="520" y="369" font-size="9" fill="#8b9b80">${matrix?.source==='kakao'?'카카오 도로':'학교 좌표'}</text></svg>`;
   $('schematic').querySelectorAll('[data-pin]').forEach(e=>{const show=()=>{$('map-info').textContent=name(e.dataset.pin)+', '+byId[e.dataset.pin].address;};e.onclick=show;e.onkeydown=ev=>{if(ev.key==='Enter')show();};});
 }
 async function loadKakao() {
@@ -288,7 +288,7 @@ async function loadKakao() {
   if(!window.kakao?.maps)throw new Error('카카오 지도 초기화 실패. 키와 등록 도메인을 확인하세요.');
   await new Promise(resolve=>kakao.maps.load(resolve));
   $('kakao-map').hidden=false;
-  kakaoMap=new kakao.maps.Map($('kakao-map'),{center:new kakao.maps.LatLng(35.17,129.06),level:9});drawMap();
+  kakaoMap=new kakao.maps.Map($('kakao-map'),{center:new kakao.maps.LatLng(scenario.schools[0].lat,scenario.schools[0].lng),level:9});drawMap();
 }
 
 async function download(body) {
@@ -452,7 +452,7 @@ action(async()=>{
   const boot=await api('bootstrap');config=boot.config;schools=boot.schools;jsKey=boot.js_key;publicMode=!!boot.public_mode;
   if(publicMode){document.body.classList.add('public-mode');$('local-origin').closest('article').hidden=true;}
   $('key-status').textContent=`파일 설정, REST 키 ${boot.rest_key_set?'설정됨':'비어 있음'}, 지도 키 ${jsKey?'설정됨':'비어 있음'}`;
-  const saved=sessionStorage.getItem('ieo-scenario');
+  const saved=sessionStorage.getItem('shuttle-scenario-gwangju-v1');
   const existing=await api('matrix').catch(()=>null);
   if(saved&&existing?.source==='kakao'){
     const value=JSON.parse(saved);await api('validate',{scenario:value});
@@ -460,7 +460,7 @@ action(async()=>{
     if(same){scenario=value;config=value.config;selected=new Set(value.schools.map(s=>s.id));matrix=existing;matrixState='ready';$('matrix-source').value='kakao';showMatrixStatus('기존 카카오 실도로 정보를 유지했습니다.','카카오 실도로 연결');renderEditors();renderResults();}
     else await applyScenario(value);
   }
-  else if(saved){try{await applyScenario(JSON.parse(saved));}catch(error){sessionStorage.removeItem('ieo-scenario');throw error;}}
+  else if(saved){try{await applyScenario(JSON.parse(saved));}catch(error){sessionStorage.removeItem('shuttle-scenario-gwangju-v1');throw error;}}
   else if(boot.default_scenario&&existing?.source){
     scenario=boot.default_scenario;config=scenario.config;selected=new Set(scenario.schools.map(s=>s.id));
     restoreMatrix(existing);showMatrixStatus('기본 도로 파일 로드 완료',existing.source==='kakao'?'카카오 도로':'추정 도로');
